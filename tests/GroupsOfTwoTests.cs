@@ -57,7 +57,7 @@ namespace NumberSeriesTests
             return Math.Round(res.Values[0].Value, 4);
         }
 
-        [TestCase(new[] { 2, 7, 6, 3, 8, 1, 5d }, ExpectedResult = 4)]              // +3
+        [TestCase(new[] { 2, 7, 6, 3, 8, 1, 5d }, ExpectedResult = 4)]              // +3??
         [TestCase(new[] { 2, 2, 3, 3, 5, 5, 6d }, ExpectedResult = 6)]              // +0
         [TestCase(new[] { 2, 5, 3, 6, 5, 8, 6d }, ExpectedResult = 9)]              // +3
         [TestCase(new[] { 2, -1, 3, 0, 5, 2, 6d }, ExpectedResult = 3)]             // -3

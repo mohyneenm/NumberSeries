@@ -81,7 +81,7 @@ namespace NumberSeries
                     {
                         MathUtils.SolveEquation(groups.Last()[0], op, out next, recur.Values[0].Value);
 
-                        result.Values.Add(Math.Round(next.Value, MathUtils.roundingPrecission));
+                        result.Values.Add(Math.Round(next.Value, MathUtils.roundingPrecision));
                         Helpers.PrintInput(groups.SelectMany(x => x).ToList(), "2grp", new List<string>() { op }, operationResults);
                         //Matches += $"2grp:'{op}'";
                         results.Add(result);

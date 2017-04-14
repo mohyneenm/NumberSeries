@@ -73,7 +73,7 @@ namespace NumberSeries
             {
                 if ((i + 1) < input.Count())
                 {
-                    tmp.Add(Math.Round(input[i + 1] - input[i], MathUtils.roundingPrecission));
+                    tmp.Add(Math.Round(input[i + 1] - input[i], MathUtils.roundingPrecision));
                     if (groupedByTwo)
                         i++;
                 }
