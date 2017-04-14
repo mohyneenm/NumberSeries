@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Diffs.cs" />
+    <Compile Include="GroupsOfFour.cs" />
     <Compile Include="GroupsOfThree.cs" />
     <Compile Include="GroupsOfTwo.cs" />
     <Compile Include="Helpers.cs" />

@@ -9,8 +9,8 @@ namespace NumberSeries
 {
     public class MathUtils
     {
-        public const int roundingPrecission = 10;
-        public static readonly List<string> operations = new List<string>() { "+", "*", "-", "/", @"\", "^" };
+        public const int roundingPrecision = 10;
+        public static readonly List<string> operations = new List<string>() { "+", "*", "-", "/", @"\", "^" };  // "\" is the reciprocal of "/", as in, given a,b, it returns b/a
 
         public static List<double> Apply(string op, List<List<double>> groups)
         {
@@ -93,37 +93,33 @@ namespace NumberSeries
         }
         private static double Add(double a, double b)
         {
-            return Math.Round(a + b, roundingPrecission);
+            return Math.Round(a + b, roundingPrecision);
         }
         private static double Mul(double a, double b)
         {
-            return Math.Round(a * b, roundingPrecission);
+            return Math.Round(a * b, roundingPrecision);
         }
         private static double Sub(double a, double b)
         {
-            return Math.Round(a - b, roundingPrecission);
+            return Math.Round(a - b, roundingPrecision);
         }
         private static double Div(double a, double b)
         {
-            try
-            {
-                return Math.Round(a / b, roundingPrecission);   // Don't use (b/a) for heuristic reasons, 'cos it confuses other direct callers.
-            }
-            catch (DivideByZeroException ex)
-            {
-                throw;
-            }
+            // double supports infinity, so this will not throw for b=0
+            return Math.Round(a / b, roundingPrecision);   // Don't use (b/a) for heuristic reasons, 'cos it confuses other direct callers.
         }
         private static double LogDiv(double a, double b)
         {
             // this helps in determining if one number is a power of the other (eg: 2^x=8 => x=log8/log2 = 3)
             //if (a != b && b == 1)
             //return 0;
-            return Math.Round(Math.Log10(a) / Math.Log10(b), roundingPrecission); // Don't use (b/a) for heuristic reasons, 'cos it confuses other direct callers.
+            return Math.Round(Math.Log10(a) / Math.Log10(b), roundingPrecision); // Don't use (b/a) for heuristic reasons, 'cos it confuses other direct callers.
         }
 
         /// <summary>
         /// Solves equation of the form: x @ y = z, where @ is any basic operation
+        /// The reason we are using 'out' to return the result instead of simply returning it is for readability,
+        /// you can read the function signature like an equation.
         /// </summary>
         /// <param name="x"></param>
         /// <param name="operation"></param>
@@ -158,6 +154,9 @@ namespace NumberSeries
             else if (operation == "logdiv2")
                 y = Evaluate("^", x, z);
         }
+
+        // The reason we are using 'out' to return the result instead of simply returning it is for readability,
+        // you can read the function signature like an equation.
         public static void SolveEquation(out double? y, string operation, double x, double z)
         {
             y = null;

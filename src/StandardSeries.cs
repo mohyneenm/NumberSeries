@@ -8,8 +8,8 @@ namespace NumberSeries
 {
     class CommonStandardSeries
     {
-        public static List<double> Natural = Enumerable.Range(0, 500).Select(x => x * 1.0).ToList();    // natural numbers
-        public static List<double> NaturalDesc = Enumerable.Range(0, 500).Select(x => x * 1.0).Reverse().ToList();    // natural numbers descending
+        public static List<double> Natural = Enumerable.Range(-100, 500).Select(x => x * 1.0).ToList();    // natural numbers
+        public static List<double> NaturalDesc = Enumerable.Range(-100, 500).Select(x => x * 1.0).Reverse().ToList();    // natural numbers descending
         //public static List<double> Even = Enumerable.Range(0, 200).Select(x => x * 1.0).Where((x, i) => i % 2 == 0).ToList();  // even
         //public static List<double> Odd = Enumerable.Range(0, 200).Select(x => x * 1.0).Where((x, i) => i % 2 != 0).ToList();  // odd
         public static List<double> Alternating = Enumerable.Repeat(1, 100).Select((x, i) => x * Math.Pow(-1, i)).ToList(); // alternating: -1, 2, -3, 4, ...

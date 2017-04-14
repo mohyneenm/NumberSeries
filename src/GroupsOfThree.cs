@@ -154,94 +154,68 @@ namespace NumberSeries
         {
             GetNextNumber = GetNextNumber ?? NPAT.GetNextNumber;
             operations = operations ?? MathUtils.operations;
-            var crossjoin = operations.SelectMany(o => operations, (o1, o2) => o1 + "," + o2);  // { "Add,Mul", "Mul,Sub", "Add,Div", "Sub,Mul", etc...}
-            double? next = null;
             NPATResult result = new NPATResult();
-            NPATResult recur = null;
+            NPATResult recursiveResult = null;
             List<NPATResult> results = new List<NPATResult>();
             result.MatchType += groupType;
 
             var firstAndSecondResults = new List<double>();
             var secondAndThirdResults = new List<double>();
             var thirdAndFirstResults = new List<double>();
-            string[] ops = new string[0];
-            var listOperations = MathUtils.operations;
-            List<double> intermediateList = null;   // list formed by combining results with another item in the group, or by taking the leftover items from the groups (leftover items are those that didn't take part in the operation)
+            var listOfOpResults = new List<List<double>>();
+            listOfOpResults.Add(firstAndSecondResults);
+            listOfOpResults.Add(secondAndThirdResults);
+            listOfOpResults.Add(thirdAndFirstResults);
 
-            // check each pair of operation
-            foreach (var operation in listOperations)
+            List<double> intermediateList1 = null;   // list formed by combining results with another item in the group, or by taking the leftover items from the groups (leftover items are those that didn't take part in the operation)
+            List<double> intermediateList2 = null;
+            NPATResult[,] resultset = new NPATResult[6,3];
+            /*
+             [[r1, null, null],     => firstAndSecondResults + c
+              [r2, null, null],     => secondAndThirdResults + a
+              [r3, null, null],     => thirdAndFirstResults + b
+              [r4, c1, null],       => firstAndSecondResults, c
+              [r5, c2, null],       => secondAndThirdResults, a
+              [r6, c3, null]]       => thirdAndFirstResults, b
+             */
+
+            // check each operation
+            foreach (var operation in operations)
             {
-                // fill tmp lists per group based on a pair of operations {2,3,5}=>{2+3,3*5}; {5,6,3}=>{5+6,6*3}, etc, same pair applied to all groups
-                ApplyOperationToAllGroups(groupsOfThree, firstAndSecondResults, secondAndThirdResults, thirdAndFirstResults, operation);
+                // fill tmp lists per group based on an operation => {(1, 2, 3), (4, 5, 6), 7}: {1*3, 4*6, 7}
+                ApplyOperationToAllGroups(operation, groupsOfThree, firstAndSecondResults, secondAndThirdResults, thirdAndFirstResults);
 
-                // Check 1: see if the results of the operation form a pattern
-                NPATResult recur1 = GetNextNumber(firstAndSecondResults, recLevel + 1);
-                intermediateList = CreateNewList(groupsOfThree, 2);
-                NPATResult recur1Extra = GetNextNumber(intermediateList, recLevel + 1);
-
-                NPATResult recur2 = GetNextNumber(secondAndThirdResults, recLevel + 1);
-                intermediateList = CreateNewList(groupsOfThree, 0);
-                NPATResult recur2Extra = GetNextNumber(intermediateList, recLevel + 1);
-
-                NPATResult recur3 = GetNextNumber(thirdAndFirstResults, recLevel + 1);
-                intermediateList = CreateNewList(groupsOfThree, 1);
-                NPATResult recur3Extra = GetNextNumber(intermediateList, recLevel + 1);
-
-                intermediateList = CreateNewList(firstAndSecondResults, groupsOfThree, 2);
-                NPATResult recur4 = GetNextNumber(intermediateList, recLevel + 1);
-
-                intermediateList = CreateNewList(secondAndThirdResults, groupsOfThree, 0);
-                NPATResult recur5 = GetNextNumber(intermediateList, recLevel + 1);
-
-                intermediateList = CreateNewList(thirdAndFirstResults, groupsOfThree, 1);
-                NPATResult recur6 = GetNextNumber(intermediateList, recLevel + 1);
-
-                var debug = "";
-                // match found, now evaluate the result
-                if (recur1?.Values.Count > 0 && groupsOfThree.Last().Count == 1 && recur1Extra?.Values.Count > 0)        // (a,b)=r => {(8,2),5,(6,4),5,(12,-2),5,(5,x)} => a+b=10
+                // 1 result is calculated by forming a new list made from the results and the remaining items:
+                // 2, 2, 3, 6, 1, 1, 7, 1, 0, 5, 2 => a*b+c=7 => (4, 3), (6, 1), (7, 0), (10, x)
+                for (var i = 0; i < 3; i++)
                 {
-                    MathUtils.SolveEquation(groupsOfThree.Last()[0], operation, out next, recur1.Values[0].Value);
-                    recur = recur1;
-                    debug = $"recur1: {operation}";
-                }
-                else if (recur2?.Values.Count > 0 && groupsOfThree.Last().Count == 2 && recur2Extra?.Values.Count > 0)   // (b,c)=r => {1,(8,2),2,(6,4),3,(12,-2),4,(5,x)} => b+c=10
-                {
-                    MathUtils.SolveEquation(groupsOfThree.Last()[1], operation, out next, recur2.Values[0].Value);
-                    recur = recur2;
-                    debug = $"recur2: {operation}";
-                }
-                else if (recur3?.Values.Count > 0 && groupsOfThree.Last().Count == 2 && recur3Extra?.Values.Count > 0)   // (a,c)=r => {(8),3,(2),(6),3,(4),(12),3,(-2),(5),3,(x)} => a+c=10
-                {
-                    MathUtils.SolveEquation(out next, operation, groupsOfThree.Last()[0], recur3.Values[0].Value);
-                    recur = recur3;
-                    debug = $"recur3: {operation}";
-                }
-                else if (recur4?.Values.Count > 0 && groupsOfThree.Last().Count == 2)   // {2,2,3,6,1,1,7,1,0,5,2,x} => a*b+c=7 => (a,b),c = r,c => {(4,3),(6,1),(7,0),(10,x)}
-                {
-                    next = recur4.Values[0].Value;
-                    recur = recur4;
-                    debug = $"recur4: {operation}";
-                }
-                else if (recur5?.Values.Count > 0 && groupsOfThree.Last().Count == 2)   // {2,2,3,2,6,1,1,1,7,5,2,x} => a+b*c=8 => a,(b,c) = r,a => {(6,2),(6,2),(7,1),(5,y)}
-                {
-                    MathUtils.SolveEquation(groupsOfThree.Last()[1], operation, out next, recur5.Values[0].Value);
-                    recur = recur5;
-                    debug = $"recur5: {operation}";
-                }
-                else if (recur6?.Values.Count > 0 && groupsOfThree.Last().Count == 2)   // {3,2,2,6,2,1,7,1,1,5,-2,x} => a*c+b=8 => (a),b,(c) = r,b => {(6,2),(6,2),(7,1),(5,y)} 
-                {
-                    MathUtils.SolveEquation(groupsOfThree.Last()[0], operation, out next, recur6.Values[0].Value);
-                    recur = recur6;
-                    debug = $"recur6: {operation}";
+                    var idx = (i + 2) % 3;
+                    intermediateList1 = CreateNewList(listOfOpResults[i], groupsOfThree, idx);
+                    resultset[i, 0] = GetNextNumber(intermediateList1, recLevel + 1);
                 }
 
-                // add result to list
-                if (next != null)
+                // 2 SEPARATE results are calculated, one using the results from any two items, another using the remaining items:
+                // 1, 8, 2, 2, 6, 4, 3, 12, -2, 4, 3 => b+c=10, a=1,2,3...
+                for (var i = 0; i < 3; i++)
                 {
-                        
-                    result = new NPATResult() { PatternComplexityOrder = recur.PatternComplexityOrder, RecursiveDepth = recur.RecursiveDepth };
-                    result.Values.Add(next);
-                    result.Comment = $"{debug}";
+                    var idx = (i + 2) % 3;
+                    resultset[i+3, 0] = GetNextNumber(listOfOpResults[i], recLevel + 1);
+                    intermediateList2 = CreateNewList(groupsOfThree, idx);
+                    resultset[i+3, 1] = GetNextNumber(intermediateList2, recLevel + 1);
+                }
+
+                //  2, 2, 3, 2, 6, 1, 1, 1, 7, 5, 2 => 6 2 6 2 7 1 5 r
+                // match found, now evaluate the result and add a new result entry to the resultset
+                EvaluateNext(groupsOfThree, resultset, operation);
+                AddResultsToList(results, resultset);
+
+                #region OLD
+                // add result to list ()
+                /*if (nextNumber != null)
+                {
+
+                    result = new NPATResult() { PatternComplexityOrder = recursiveResult.PatternComplexityOrder, RecursiveDepth = recursiveResult.RecursiveDepth };
+                    result.Values.Add(nextNumber);
                     results.Add(result);
                 }
                 else
@@ -251,7 +225,8 @@ namespace NumberSeries
                         result.IsCompleteSeries = true;  // this is for the 2lists,3grp case where one list will be a complete series
                         return result;
                     }
-                }
+                }*/ 
+                #endregion
 
                 firstAndSecondResults.Clear();
                 secondAndThirdResults.Clear();
@@ -260,10 +235,72 @@ namespace NumberSeries
 
             if (results.Count > 0)
             {
-                var resultsOrdered = results.Where(r=>r?.Values.Count > 0).OrderBy(r => 2 * r.RecursiveDepth + r.PatternComplexityOrder); // recursive depth is given lower precedence by giving it extra weight (*2)
+                var resultsOrdered = results.Where(r => r?.Values.Count > 0 && !double.IsInfinity(r.Values[0].Value))
+                                            .OrderBy(r => 2 * r.RecursiveDepth + r.PatternComplexityOrder); // recursive depth is given lower precedence by giving it extra weight (*2)
+
                 return resultsOrdered.FirstOrDefault();
             }
+
             return null;
+        }
+
+        private static void AddResultsToList(List<NPATResult> results, NPATResult[,] resultset)
+        {
+            for (var i = 0; i < 6; i++)
+            {
+                if (resultset[i, 2] != null)
+                {
+                    var r = resultset[i, 2];
+                    r.PatternComplexityOrder = resultset[i, 0].PatternComplexityOrder;  // ERROR: null ref!!!
+                    r.RecursiveDepth = resultset[i, 0].RecursiveDepth;
+                    results.Add(r);
+                }
+            }
+        }
+
+        private static void EvaluateNext(List<List<double>> groupsOfThree, NPATResult[,] resultset, string operation)
+        {
+            double? nextNumber = null;
+            int rowZero = 0, rowOne = 1, rowTwo = 2, rowThree = 3, rowFour = 4, rowFive = 5;
+
+            // TODO: IMPORTANT: remove all 'else' parts, these should all be 'if' only. We need to preserve all results and find the best match at the end
+            // Add the results in the array itself
+            if (groupsOfThree.Last().Count == 1)
+            {
+                if (resultset[rowThree, 0]?.Values.Count > 0 && resultset[rowThree, 1]?.Values.Count > 0)        // (a,b)=r => {(8,2),5,(6,4),5,(12,-2),5,(5,x)} => a+b=10, c=5
+                {
+                    MathUtils.SolveEquation(groupsOfThree.Last()[0], operation, out nextNumber, resultset[rowThree, 0].Values[0].Value);
+                    resultset[rowThree, 2] = new NPATResult() { Values = new List<double?>() { nextNumber } };
+                }
+            }
+            else if (groupsOfThree.Last().Count == 2)
+            {
+                if (resultset[rowFour, 0]?.Values.Count > 0 && resultset[rowFour, 1]?.Values.Count > 0)   // (b,c)=r => {1,(8,2),2,(6,4),3,(12,-2),4,(5,x)} => b+c=10, a=1,2,3...
+                {
+                    MathUtils.SolveEquation(groupsOfThree.Last()[1], operation, out nextNumber, resultset[rowFour, 0].Values[0].Value);
+                    resultset[rowFour, 2] = new NPATResult() { Values=new List<double?>() { nextNumber }};
+                }
+                else if (resultset[rowFive, 0]?.Values.Count > 0 && resultset[rowFive, 1]?.Values.Count > 0)   // (a,c)=r => {(8),3,(2),(6),3,(4),(12),3,(-2),(5),3,(x)} => a+c=10
+                {
+                    MathUtils.SolveEquation(out nextNumber, operation, groupsOfThree.Last()[0], resultset[rowFive, 0].Values[0].Value);
+                    resultset[rowFive, 2] = new NPATResult() { Values = new List<double?>() { nextNumber } };
+                }
+                else if (resultset[rowZero, 0]?.Values.Count > 0)   // {2,2,3,6,1,1,7,1,0,5,2,x} => a*b+c=7 => (a,b),c = r,c => {(4,3),(6,1),(7,0),(10,x)}
+                {
+                    nextNumber = resultset[rowZero, 0].Values[0].Value;
+                    resultset[rowZero, 2] = new NPATResult() { Values = new List<double?>() { nextNumber } };
+                }
+                else if (resultset[rowOne, 0]?.Values.Count > 0)   // {2,2,3,2,6,1,1,1,7,5,2,x} => a+b*c=8 => a,(b,c) = r,a => {(6,2),(6,2),(7,1),(5,y)}
+                {
+                    MathUtils.SolveEquation(groupsOfThree.Last()[1], operation, out nextNumber, resultset[rowOne, 0].Values[0].Value);
+                    resultset[rowOne, 2] = new NPATResult() { Values = new List<double?>() { nextNumber } };
+                }
+                else if (resultset[rowTwo, 0]?.Values.Count > 0)   // {3,2,2,6,2,1,7,1,1,5,-2,x} => a*c+b=8 => (a),b,(c) = r,b => {(6,2),(6,2),(7,1),(5,y)} 
+                {
+                    MathUtils.SolveEquation(groupsOfThree.Last()[0], operation, out nextNumber, resultset[rowTwo, 0].Values[0].Value);
+                    resultset[rowTwo, 2] = new NPATResult() { Values = new List<double?>() { nextNumber } };
+                }
+            }
         }
 
         private static List<double> CreateNewList(List<List<double>> groupsOfThree, int groupIndex)
@@ -311,7 +348,7 @@ namespace NumberSeries
             return newList;
         }
 
-        private static void ApplyOperationToAllGroups(List<List<double>> groupsOfThree, List<double> firstAndSecondResults, List<double> secondAndThirdResults, List<double> thirdAndFirstResults, string operation)
+        private static void ApplyOperationToAllGroups(string operation, List<List<double>> groupsOfThree, List<double> firstAndSecondResults, List<double> secondAndThirdResults, List<double> thirdAndFirstResults)
         {
             foreach (var group in groupsOfThree)
             {
