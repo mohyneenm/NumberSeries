@@ -1,5 +1,7 @@
 # NumberSeries
-Predicts the next number in a given sequence of numbers
+Predicts the next number in a given sequence of numbers.
+
+This project was inspired by the NPAT tests that applicants need to take for certain universities or companies. The test presents number sequences where you have to figure out the next number. Machine Learning will not easily work here because some sequences may contain only 3 numbers and you have to guess the simplest next number. And some patterns are quite hard, which will require a huge amount of training data to train a model, whereas you can simply write down the formula and be done with it.
 
 Here are some guidelines that I am following in order to simplify ambiguous cases:
     
