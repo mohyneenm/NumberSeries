@@ -28,7 +28,7 @@ Types of patterns implemented:
 
 * Standard series interleaved:
 	1, 2, 9, 24, 120, 36
-	In the aove series factorials and squares are interleaved: 2 24 120, 1 9 36
+	In the above series factorials and squares are interleaved: 2 24 120, 1 9 36
 
 * Diffs:	
 	1 4 7 10 13 16
